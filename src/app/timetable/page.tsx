@@ -7,6 +7,7 @@ import { RequireAuth } from "@/components/Shell";
 import { useData } from "@/lib/store";
 import { DAY_NAMES, formatTime12h, timeToMinutes } from "@/lib/dates";
 import { TimetableEditor } from "@/components/editors";
+import { downloadLecturesCsv, TimetableUpload } from "@/components/TimetableUpload";
 import { Badge, Card, CardHeader, EmptyState, PrimaryButton, SecondaryButton } from "@/components/ui";
 
 export default function TimetablePage() {
@@ -47,19 +48,25 @@ function Timetable() {
             <PrimaryButton onClick={save}>Save timetable</PrimaryButton>
           </div>
         ) : (
-          <PrimaryButton onClick={startEdit}>Edit timetable</PrimaryButton>
+          <div className="flex gap-2">
+            <SecondaryButton onClick={() => downloadLecturesCsv(state.lectures)}>Download as CSV</SecondaryButton>
+            <PrimaryButton onClick={startEdit}>Edit timetable</PrimaryButton>
+          </div>
         )}
       </div>
 
       {editing ? (
-        <Card>
-          <div className="px-5 py-4">
-            <TimetableEditor lectures={draft} onChange={setDraft} />
-            <p className="mt-3 text-xs text-slate-500">
-              Changes are saved when you press “Save timetable”.
-            </p>
-          </div>
-        </Card>
+        <div className="space-y-6">
+          <TimetableUpload lectures={draft} onChange={setDraft} />
+          <Card>
+            <div className="px-5 py-4">
+              <TimetableEditor lectures={draft} onChange={setDraft} />
+              <p className="mt-3 text-xs text-slate-500">
+                Changes are saved when you press “Save timetable”.
+              </p>
+            </div>
+          </Card>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {days.map((day) => {
