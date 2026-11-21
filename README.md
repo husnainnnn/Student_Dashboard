@@ -13,7 +13,11 @@ demo data only.
 
 - **Today** — today's lectures with a next-class countdown, today's mess status,
   assignments due soon, active reminders, quick links.
-- **Timetable** — full week grid, editable.
+- **Timetable** — full week grid, editable. Upload a timetable file (CSV,
+  JSON, text or PDF) or paste timetable text instead of typing every lecture:
+  a preview shows parsed lectures, flags bad rows, and lets you fix or skip
+  them before replacing or merging. Download the current timetable as CSV.
+  A blank CSV template is at `public/timetable-template.csv`.
 - **Assignments** — due dates, due-soon highlight, pending / submitted / missing.
 - **Mess** — weekly menu, today's breakfast/lunch/dinner booking status, mess
   form link.
@@ -24,7 +28,8 @@ demo data only.
   window, quiet hours, and browser notifications while the app is open.
 - **Onboarding** — after signup/login, a step-by-step wizard collects your
   timetable, mess menu, important links, and reminder rules. Skippable: skipping
-  fills in demo data you can replace from Settings.
+  fills in demo data you can replace from Settings. The timetable step also
+  offers the file upload, so a new student can import instead of typing.
 - **Settings** — edit everything from onboarding any time, load demo data, or
   clear your data.
 
@@ -79,10 +84,14 @@ src/
     Shell.tsx           Providers + auth/onboarding gate
     ui.tsx              Shared buttons, inputs, cards, badges
     editors.tsx         Timetable / mess menu / links / preferences editors
+    TimetableUpload.tsx Timetable file upload + preview + CSV export
   lib/
     types.ts            Shared types + default settings
     demo-data.ts        DEMO seed data (BCS-7E timetable etc.) — replaceable
     dates.ts            Date/time helpers
+    paths.ts            Deployed base path (GitHub Pages) for static files
+    timetable-import.ts CSV/JSON/text/PDF timetable parsing + CSV export
+    pdf-extract.ts      In-browser PDF text extraction (pdfjs-dist)
     reminders.ts        Reminder computation from data + settings
     supabase.ts         Supabase client + configured check
     auth.tsx            Auth provider (Supabase Auth or local demo profile)
@@ -95,13 +104,17 @@ supabase/
 
 - **Real:** timetable, assignments, mess menu, links, reminder rules, notes and
   search all work end to end in demo mode (localStorage) and in Supabase mode.
+  Timetable import from CSV, JSON, text and PDF also works in the browser
+  (pdfjs-dist; its worker file is vendored at `public/pdf.worker.min.mjs` —
+  copy it again from the package if pdfjs-dist is ever upgraded).
 - **Demo data:** the seed timetable is a real BCS-7E timetable and the seed
   assignments are real assignments, but they are only the demo seed. Any student
   replaces them during onboarding or from Settings. The weekly mess menu is a
   placeholder — edit it to match your hostel.
-- **Placeholder:** PDF text extraction. Text files and pasted text work now;
-  PDF parsing needs a server step and lands with the backend commit. Until then
-  the Notes page tells you to paste the PDF text.
+- **Placeholder:** PDF text extraction for Notes. Text files and pasted text work
+  now; PDF parsing needs a server step and lands with the backend commit. Until
+  then the Notes page tells you to paste the PDF text. (Timetable PDFs are
+  different — those are read in the browser, see above.)
 - **Not built yet:** Google Classroom API sync (assignments are manual for now),
   generative answers for Notes (currently extractive passages only — see below),
   and push/email reminders when the app is closed.
