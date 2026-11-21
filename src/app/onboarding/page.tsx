@@ -11,6 +11,7 @@ import { useData } from "@/lib/store";
 import type { AppState, Lecture, MessMenu, SavedLink, Settings } from "@/lib/types";
 import { emptyState } from "@/lib/types";
 import { LinksEditor, MessMenuEditor, PreferencesForm, TimetableEditor } from "@/components/editors";
+import { TimetableUpload } from "@/components/TimetableUpload";
 import { Card, Field, Notice, PrimaryButton, SecondaryButton, TextInput } from "@/components/ui";
 
 const STEPS = ["Welcome", "Timetable", "Mess", "Links", "Preferences", "Done"];
@@ -116,14 +117,17 @@ function Wizard() {
       ) : null}
 
       {step === 1 ? (
-        <Card>
-          <div className="space-y-4 px-5 py-6">
-            <h2 className="text-lg font-semibold text-slate-900">Your timetable</h2>
-            <p className="text-sm text-slate-500">Add each lecture with its day, time, room and teacher. You can add more later.</p>
-            <TimetableEditor lectures={draft.lectures} onChange={setLectures} />
-            <StepNav step={step} setStep={setStep} onSkip={skip} />
-          </div>
-        </Card>
+        <div className="space-y-4">
+          <TimetableUpload lectures={draft.lectures} onChange={setLectures} />
+          <Card>
+            <div className="space-y-4 px-5 py-6">
+              <h2 className="text-lg font-semibold text-slate-900">Your timetable</h2>
+              <p className="text-sm text-slate-500">Add each lecture with its day, time, room and teacher. You can add more later.</p>
+              <TimetableEditor lectures={draft.lectures} onChange={setLectures} />
+              <StepNav step={step} setStep={setStep} onSkip={skip} />
+            </div>
+          </Card>
+        </div>
       ) : null}
 
       {step === 2 ? (
