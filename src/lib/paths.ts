@@ -11,3 +11,30 @@ export function appBasePath(): string {
   parts.pop();
   return parts.length ? `/${parts.join("/")}` : "";
 }
+
+// Known app routes, used to normalise the browser pathname.
+// usePathname() returns the deployed path including the base path and the
+// trailing slash (e.g. "/Student_Dashboard/onboarding/"), so comparing it
+// against a bare route ("/onboarding") never matches on GitHub Pages.
+// normalizePathname() strips both and returns the bare route.
+const KNOWN_ROUTES = [
+  "/login",
+  "/signup",
+  "/onboarding",
+  "/timetable",
+  "/assignments",
+  "/mess",
+  "/notes",
+  "/reminders",
+  "/settings",
+];
+
+export function normalizePathname(pathname: string | null): string {
+  if (!pathname) return "/";
+  const trimmed = pathname.replace(/\/+$/, "") || "/";
+  if (trimmed === "/") return "/";
+  for (const route of KNOWN_ROUTES) {
+    if (trimmed === route || trimmed.endsWith(route)) return route;
+  }
+  return "/";
+}
