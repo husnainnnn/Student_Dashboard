@@ -5,9 +5,10 @@
 import { useState } from "react";
 import { RequireAuth } from "@/components/Shell";
 import { useData } from "@/lib/store";
-import { DAY_NAMES, toDateKey } from "@/lib/dates";
+import { DAY_NAMES, DAY_SHORT, formatDateShort, toDateKey } from "@/lib/dates";
 import { MessMenuEditor } from "@/components/editors";
-import { Card, CardHeader, EmptyState, PrimaryButton, SecondaryButton } from "@/components/ui";
+import { downloadMessCsv, MessMenuUpload } from "@/components/MessMenuUpload";
+import { Badge, Card, CardHeader, EmptyState, Notice, PrimaryButton, SecondaryButton, TextInput } from "@/components/ui";
 
 export default function MessPage() {
   return (
@@ -18,7 +19,7 @@ export default function MessPage() {
 }
 
 function Mess() {
-  const { state, setMessMenus, setMessStatus } = useData();
+  const { state, setMessMenus, setMessStatus, addLink, setLinks } = useData();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(state.messMenus);
   const today = new Date();
@@ -26,6 +27,28 @@ function Mess() {
   const status = state.messStatus[todayKey] ?? { breakfast: false, lunch: false, dinner: false };
   const todayMenu = state.messMenus.find((m) => m.day === today.getDay());
   const messFormLink = state.links.find((l) => /mess/i.test(l.label));
+  const [formLinkDraft, setFormLinkDraft] = useState(messFormLink?.url ?? "");
+  const [linkSaved, setLinkSaved] = useState(false);
+
+  // Last 7 days of booking toggles, newest first. The toggles are saved
+  // per date, so this also shows that bookings persist across days.
+  const pastWeek = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = toDateKey(d);
+    return { key, date: d, status: state.messStatus[key] ?? null };
+  });
+
+  function saveFormLink() {
+    const url = formLinkDraft.trim();
+    if (!url) return;
+    if (messFormLink) {
+      setLinks(state.links.map((l) => (l.id === messFormLink.id ? { ...l, url } : l)));
+    } else {
+      addLink("Mess Attendance Form", url);
+    }
+    setLinkSaved(true);
+  }
 
   function toggleMeal(meal: "breakfast" | "lunch" | "dinner") {
     setMessStatus(todayKey, { ...status, [meal]: !status[meal] });
@@ -93,16 +116,25 @@ function Mess() {
             <PrimaryButton onClick={save}>Save menu</PrimaryButton>
           </div>
         ) : (
-          <PrimaryButton onClick={startEdit}>Edit menu</PrimaryButton>
+          <div className="flex gap-2">
+            <SecondaryButton onClick={() => downloadMessCsv(state.messMenus)}>Download as CSV</SecondaryButton>
+            <PrimaryButton onClick={startEdit}>Edit menu</PrimaryButton>
+          </div>
         )}
       </div>
 
       {editing ? (
-        <Card>
-          <div className="px-5 py-4">
-            <MessMenuEditor menus={draft} onChange={setDraft} />
-          </div>
-        </Card>
+        <div className="space-y-6">
+          <MessMenuUpload menus={draft} onChange={setDraft} />
+          <Card>
+            <div className="px-5 py-4">
+              <MessMenuEditor menus={draft} onChange={setDraft} />
+              <p className="mt-3 text-xs text-slate-500">
+                Changes are saved when you press “Save menu”.
+              </p>
+            </div>
+          </Card>
+        </div>
       ) : (
         <Card>
           <div className="overflow-x-auto">
@@ -139,6 +171,55 @@ function Mess() {
           ) : null}
         </Card>
       )}
+
+      <Card>
+        <CardHeader title="Mess form link" subtitle="The form you open to book each day's meals." />
+        <div className="space-y-3 px-5 py-4">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <TextInput
+              value={formLinkDraft}
+              onChange={(e) => {
+                setFormLinkDraft(e.target.value);
+                setLinkSaved(false);
+              }}
+              placeholder="https://forms.gle/…"
+              aria-label="Mess form link"
+            />
+            <PrimaryButton onClick={saveFormLink} disabled={!formLinkDraft.trim() || formLinkDraft.trim() === messFormLink?.url}>
+              Save link
+            </PrimaryButton>
+          </div>
+          {linkSaved ? <Notice tone="green">Mess form link saved.</Notice> : null}
+          <p className="text-xs text-slate-500">
+            Saved with your other links and shown as the “Open mess form” button above.
+          </p>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Booking history" subtitle="Your saved bookings for the last 7 days." />
+        <ul className="divide-y divide-slate-100">
+          {pastWeek.map(({ key, date, status: s }) => (
+            <li key={key} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+              <span className="text-sm font-medium text-slate-900">
+                {DAY_SHORT[date.getDay()]} {formatDateShort(key)}
+                {key === todayKey ? " (today)" : ""}
+              </span>
+              {s ? (
+                <span className="flex gap-2">
+                  {(["breakfast", "lunch", "dinner"] as const).map((meal) => (
+                    <Badge key={meal} tone={s[meal] ? "blue" : "slate"}>
+                      {meal[0].toUpperCase() + meal.slice(1)}: {s[meal] ? "Booked" : "No"}
+                    </Badge>
+                  ))}
+                </span>
+              ) : (
+                <span className="text-sm text-slate-400">No bookings saved</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </Card>
     </div>
   );
 }
