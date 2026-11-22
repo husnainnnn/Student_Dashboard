@@ -9,6 +9,7 @@ import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { DataProvider, useData } from "@/lib/store";
+import { normalizePathname } from "@/lib/paths";
 import Nav from "./Nav";
 
 const PUBLIC_PATHS = ["/login", "/signup", "/onboarding"];
@@ -18,6 +19,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const { state, ready } = useData();
   const router = useRouter();
   const pathname = usePathname();
+  // Live pathname carries the base path + trailing slash
+  // ("/Student_Dashboard/onboarding/"), so compare the normalised route.
+  const path = normalizePathname(pathname);
 
   useEffect(() => {
     if (loading || !ready) return;
@@ -25,10 +29,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       router.replace("/login");
       return;
     }
-    if (!state.settings.onboardingDone && pathname !== "/onboarding") {
+    if (!state.settings.onboardingDone && path !== "/onboarding") {
       router.replace("/onboarding");
     }
-  }, [user, loading, ready, state.settings.onboardingDone, pathname, router]);
+  }, [user, loading, ready, state.settings.onboardingDone, path, router]);
 
   if (loading || !ready) {
     return (
@@ -36,7 +40,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
   if (!user) return null;
-  if (!state.settings.onboardingDone && pathname !== "/onboarding") return null;
+  if (!state.settings.onboardingDone && path !== "/onboarding") return null;
   return <>{children}</>;
 }
 

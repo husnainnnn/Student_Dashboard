@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/store";
+import { normalizePathname } from "@/lib/paths";
 
 const LINKS = [
   { href: "/", label: "Today" },
@@ -19,11 +20,14 @@ const LINKS = [
 
 export default function Nav() {
   const pathname = usePathname();
+  // Live pathname carries the base path + trailing slash
+  // ("/Student_Dashboard/mess/"), so compare the normalised route.
+  const path = normalizePathname(pathname);
   const router = useRouter();
   const { user, loading, mode, signOut } = useAuth();
   const { state } = useData();
 
-  if (pathname === "/login" || pathname === "/signup" || pathname === "/onboarding") {
+  if (path === "/login" || path === "/signup" || path === "/onboarding") {
     return null;
   }
 
@@ -40,7 +44,7 @@ export default function Nav() {
         </Link>
         <nav className="flex flex-1 flex-wrap items-center gap-1 overflow-x-auto">
           {LINKS.map((l) => {
-            const active = pathname === l.href;
+            const active = path === l.href;
             return (
               <Link
                 key={l.href}
