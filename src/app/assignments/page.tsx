@@ -1,12 +1,20 @@
-// Assignments — list with due dates, due-soon highlight, status tracking.
+// Assignments — list with due dates, due-soon highlight, status tracking,
+// inline editing, course filter, sorting and bulk CSV import.
 
 "use client";
 
 import { useMemo, useState } from "react";
 import { RequireAuth } from "@/components/Shell";
+import { AssignmentImport } from "@/components/AssignmentImport";
 import { useData } from "@/lib/store";
+import { assignmentsToCsv } from "@/lib/assignments-import";
+import { downloadTextFile } from "@/components/TimetableUpload";
 import { daysUntil, dueLabel, formatDateShort } from "@/lib/dates";
-import { Badge, Card, CardHeader, DangerButton, EmptyState, Field, PrimaryButton, SecondaryButton, TextInput } from "@/components/ui";
+import type { Assignment, AssignmentStatus } from "@/lib/types";
+import { Badge, Card, CardHeader, DangerButton, EmptyState, Field, Notice, PrimaryButton, SecondaryButton, Select, TextInput } from "@/components/ui";
+
+type StatusFilter = "all" | "pending" | "submitted" | "missing";
+type SortMode = "due" | "course" | "title";
 
 export default function AssignmentsPage() {
   return (
@@ -17,22 +25,48 @@ export default function AssignmentsPage() {
 }
 
 function Assignments() {
-  const { state, addAssignment, updateAssignment, deleteAssignment } = useData();
+  const { state, addAssignment, updateAssignment, deleteAssignment, setAssignments } = useData();
   const [course, setCourse] = useState("");
   const [title, setTitle] = useState("");
   const [due, setDue] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState<"all" | "pending" | "submitted" | "missing">("all");
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [sortMode, setSortMode] = useState<SortMode>("due");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCourse, setEditCourse] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editDue, setEditDue] = useState("");
+
+  const courses = useMemo(
+    () => Array.from(new Set(state.assignments.map((a) => a.course))).sort((a, b) => a.localeCompare(b)),
+    [state.assignments]
+  );
 
   const sorted = useMemo(() => {
-    const list = [...state.assignments].sort((a, b) => {
+    let list = [...state.assignments];
+    if (filter !== "all") list = list.filter((a) => a.status === filter);
+    if (courseFilter !== "all") list = list.filter((a) => a.course === courseFilter);
+    const byDue = (a: Assignment, b: Assignment) => {
       if (!a.due && !b.due) return a.title.localeCompare(b.title);
       if (!a.due) return 1;
       if (!b.due) return -1;
-      return a.due.localeCompare(b.due);
-    });
-    return filter === "all" ? list : list.filter((a) => a.status === filter);
-  }, [state.assignments, filter]);
+      return a.due.localeCompare(b.due) || a.title.localeCompare(b.title);
+    };
+    if (sortMode === "course") {
+      list.sort((a, b) => a.course.localeCompare(b.course) || byDue(a, b));
+    } else if (sortMode === "title") {
+      list.sort((a, b) => a.title.localeCompare(b.title));
+    } else {
+      // Due soon: work still to do first (overdue, then nearest), no due
+      // date last; submitted items sit at the bottom.
+      const active = list.filter((a) => a.status !== "submitted").sort(byDue);
+      const done = list.filter((a) => a.status === "submitted").sort(byDue);
+      list = [...active, ...done];
+    }
+    return list;
+  }, [state.assignments, filter, courseFilter, sortMode]);
 
   function submit() {
     if (!title.trim()) return;
@@ -41,6 +75,25 @@ function Assignments() {
     setTitle("");
     setDue("");
     setShowForm(false);
+    setNotice("Assignment added.");
+  }
+
+  function startEdit(a: Assignment) {
+    setEditingId(a.id);
+    setEditCourse(a.course);
+    setEditTitle(a.title);
+    setEditDue(a.due ?? "");
+  }
+
+  function saveEdit() {
+    if (!editingId || !editTitle.trim()) return;
+    updateAssignment(editingId, {
+      course: editCourse.trim() || "General",
+      title: editTitle.trim(),
+      due: editDue || null,
+    });
+    setEditingId(null);
+    setNotice("Assignment updated.");
   }
 
   function toneFor(a: { due: string | null; status: string }): "red" | "amber" | "green" | "slate" {
@@ -51,6 +104,10 @@ function Assignments() {
     if (d < 0) return "red";
     if (d <= 3) return "amber";
     return "slate";
+  }
+
+  function statusTone(s: AssignmentStatus): "blue" | "green" | "red" {
+    return s === "submitted" ? "green" : s === "missing" ? "red" : "blue";
   }
 
   const counts = useMemo(() => {
@@ -76,6 +133,8 @@ function Assignments() {
         </PrimaryButton>
       </div>
 
+      {notice ? <Notice tone="green">{notice}</Notice> : null}
+
       {showForm ? (
         <Card>
           <div className="grid gap-4 px-5 py-4 sm:grid-cols-4">
@@ -100,7 +159,7 @@ function Assignments() {
         </Card>
       ) : null}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(["all", "pending", "submitted", "missing"] as const).map((f) => (
           <button
             key={f}
@@ -112,44 +171,123 @@ function Assignments() {
             {f[0].toUpperCase() + f.slice(1)} ({counts[f]})
           </button>
         ))}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            Course
+            <Select
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
+              className="w-auto px-2 py-1.5"
+              aria-label="Filter by course"
+            >
+              <option value="all">All courses</option>
+              {courses.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            Sort
+            <Select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              className="w-auto px-2 py-1.5"
+              aria-label="Sort assignments"
+            >
+              <option value="due">Due soon first</option>
+              <option value="course">Course A–Z</option>
+              <option value="title">Title A–Z</option>
+            </Select>
+          </label>
+        </div>
       </div>
 
       <Card>
-        <CardHeader title="All assignments" subtitle="Due soon is highlighted from your reminder settings" />
+        <CardHeader
+          title="All assignments"
+          subtitle="Due soon is highlighted from your reminder settings"
+          action={
+            <SecondaryButton
+              type="button"
+              onClick={() => downloadTextFile("assignments.csv", assignmentsToCsv(state.assignments), "text/csv")}
+              disabled={state.assignments.length === 0}
+            >
+              Download as CSV
+            </SecondaryButton>
+          }
+        />
         {sorted.length === 0 ? (
-          <EmptyState title="No assignments here" text="Add your first assignment with the button above." />
+          <EmptyState title="No assignments here" text="Add your first assignment with the button above, or import a list below." />
         ) : (
           <ul className="divide-y divide-slate-100">
             {sorted.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-900">{a.title}</p>
-                  <p className="text-sm text-slate-500">
-                    {a.course}
-                    {a.due ? ` · Due ${formatDateShort(a.due)}` : " · No due date"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge tone={toneFor(a)}>{dueLabel(a.due)}</Badge>
-                  <Badge tone={a.status === "submitted" ? "green" : a.status === "missing" ? "red" : "blue"}>
-                    {a.status}
-                  </Badge>
-                  {a.status !== "submitted" ? (
-                    <SecondaryButton onClick={() => updateAssignment(a.id, { status: "submitted" })}>
-                      Mark submitted
-                    </SecondaryButton>
-                  ) : (
-                    <SecondaryButton onClick={() => updateAssignment(a.id, { status: "pending" })}>
-                      Reopen
-                    </SecondaryButton>
-                  )}
-                  <DangerButton onClick={() => deleteAssignment(a.id)}>Delete</DangerButton>
-                </div>
+                {editingId === a.id ? (
+                  <div className="grid w-full gap-3 sm:grid-cols-4">
+                    <Field label="Course">
+                      <TextInput value={editCourse} onChange={(e) => setEditCourse(e.target.value)} />
+                    </Field>
+                    <div className="sm:col-span-2">
+                      <Field label="Title">
+                        <TextInput value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                      </Field>
+                    </div>
+                    <Field label="Due date">
+                      <TextInput type="date" value={editDue} onChange={(e) => setEditDue(e.target.value)} />
+                    </Field>
+                    <div className="flex gap-2 sm:col-span-4">
+                      <PrimaryButton onClick={saveEdit} disabled={!editTitle.trim()}>
+                        Save changes
+                      </PrimaryButton>
+                      <SecondaryButton onClick={() => setEditingId(null)}>Cancel</SecondaryButton>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900">{a.title}</p>
+                      <p className="text-sm text-slate-500">
+                        {a.course}
+                        {a.due ? ` · Due ${formatDateShort(a.due)}` : " · No due date"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={toneFor(a)}>{dueLabel(a.due)}</Badge>
+                      <Badge tone={statusTone(a.status)}>{a.status}</Badge>
+                      <SecondaryButton onClick={() => startEdit(a)}>Edit</SecondaryButton>
+                      {a.status === "submitted" ? (
+                        <SecondaryButton onClick={() => updateAssignment(a.id, { status: "pending" })}>
+                          Reopen
+                        </SecondaryButton>
+                      ) : (
+                        <>
+                          <SecondaryButton onClick={() => updateAssignment(a.id, { status: "submitted" })}>
+                            Mark submitted
+                          </SecondaryButton>
+                          {a.status !== "missing" ? (
+                            <SecondaryButton onClick={() => updateAssignment(a.id, { status: "missing" })}>
+                              Mark missing
+                            </SecondaryButton>
+                          ) : (
+                            <SecondaryButton onClick={() => updateAssignment(a.id, { status: "pending" })}>
+                              Mark pending
+                            </SecondaryButton>
+                          )}
+                        </>
+                      )}
+                      <DangerButton onClick={() => deleteAssignment(a.id)}>Delete</DangerButton>
+                    </div>
+                  </>
+                )}
               </li>
             ))}
           </ul>
         )}
       </Card>
+
+      <AssignmentImport assignments={state.assignments} onChange={setAssignments} />
     </div>
   );
 }
