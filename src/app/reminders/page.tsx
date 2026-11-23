@@ -70,7 +70,7 @@ function Reminders() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         {perm === "granted" ? (
           <Notice tone="green">Browser notifications are on. Reminders will pop up while the app is open.</Notice>
         ) : perm === "denied" ? (
@@ -97,11 +97,13 @@ function Reminders() {
           <ul className="divide-y divide-slate-100">
             {result.active.map((r) => (
               <li key={r.id} className="flex items-start justify-between gap-4 px-5 py-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900">{r.title}</p>
                   <p className="text-sm text-slate-500">{r.detail}</p>
                 </div>
-                <Badge tone={r.urgent ? "red" : "amber"}>{r.kind === "lecture" ? "Lecture" : "Assignment"}</Badge>
+                <span className="shrink-0">
+                  <Badge tone={r.urgent ? "red" : "amber"}>{r.kind === "lecture" ? "Lecture" : "Assignment"}</Badge>
+                </span>
               </li>
             ))}
           </ul>
@@ -116,11 +118,13 @@ function Reminders() {
           <ul className="divide-y divide-slate-100">
             {result.upcoming.map((r) => (
               <li key={r.id} className="flex items-start justify-between gap-4 px-5 py-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900">{r.title}</p>
                   <p className="text-sm text-slate-500">{r.detail}</p>
                 </div>
-                <Badge tone="slate">{r.kind === "lecture" ? "Lecture" : "Assignment"}</Badge>
+                <span className="shrink-0">
+                  <Badge tone="slate">{r.kind === "lecture" ? "Lecture" : "Assignment"}</Badge>
+                </span>
               </li>
             ))}
           </ul>
