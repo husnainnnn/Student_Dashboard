@@ -95,11 +95,13 @@ function Today() {
           <ul className="divide-y divide-slate-100">
             {reminders.active.map((r) => (
               <li key={r.id} className="flex items-start justify-between gap-4 px-5 py-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900">{r.title}</p>
                   <p className="text-sm text-slate-500">{r.detail}</p>
                 </div>
-                <Badge tone={r.urgent ? "red" : "amber"}>{r.kind === "lecture" ? "Lecture" : "Assignment"}</Badge>
+                <span className="shrink-0">
+                  <Badge tone={r.urgent ? "red" : "amber"}>{r.kind === "lecture" ? "Lecture" : "Assignment"}</Badge>
+                </span>
               </li>
             ))}
           </ul>
@@ -127,7 +129,7 @@ function Today() {
                   const ended = timeToMinutes(l.end) <= now.getHours() * 60 + now.getMinutes();
                   return (
                     <li key={l.id} className={`flex items-start justify-between gap-4 px-5 py-3 ${isNext ? "bg-blue-50/60" : ""}`}>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-900">
                           {l.subject} {isNext ? <Badge tone="blue">Next · in {countdown}</Badge> : null}
                           {ended ? <Badge tone="slate">Done</Badge> : null}
@@ -136,7 +138,7 @@ function Today() {
                           {l.teacher} · {l.room}
                         </p>
                       </div>
-                      <span className="whitespace-nowrap text-sm font-medium text-slate-700">
+                      <span className="shrink-0 whitespace-nowrap text-sm font-medium text-slate-700">
                         {formatTime12h(l.start)} – {formatTime12h(l.end)}
                       </span>
                     </li>
@@ -161,13 +163,15 @@ function Today() {
               <ul className="divide-y divide-slate-100">
                 {dueSoon.map((a) => (
                   <li key={a.id} className="flex items-start justify-between gap-4 px-5 py-3">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-900">{a.title}</p>
                       <p className="text-sm text-slate-500">{a.course}</p>
                     </div>
-                    <Badge tone={a.due === todayKey ? "red" : "amber"}>
-                      {a.due ? `Due ${a.due}` : "No due date"}
-                    </Badge>
+                    <span className="shrink-0">
+                      <Badge tone={a.due === todayKey ? "red" : "amber"}>
+                        {a.due ? `Due ${a.due}` : "No due date"}
+                      </Badge>
+                    </span>
                   </li>
                 ))}
               </ul>
