@@ -37,18 +37,18 @@ function Timetable() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Timetable</h1>
           <p className="mt-1 text-sm text-slate-500">Your weekly lecture schedule.</p>
         </div>
         {editing ? (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <SecondaryButton onClick={() => setEditing(false)}>Cancel</SecondaryButton>
             <PrimaryButton onClick={save}>Save timetable</PrimaryButton>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <SecondaryButton onClick={() => downloadLecturesCsv(state.lectures)}>Download as CSV</SecondaryButton>
             <PrimaryButton onClick={startEdit}>Edit timetable</PrimaryButton>
           </div>
