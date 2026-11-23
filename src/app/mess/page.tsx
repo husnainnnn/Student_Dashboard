@@ -108,15 +108,15 @@ function Mess() {
         </p>
       </Card>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h2 className="text-lg font-semibold text-slate-900">Weekly menu</h2>
         {editing ? (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <SecondaryButton onClick={() => setEditing(false)}>Cancel</SecondaryButton>
             <PrimaryButton onClick={save}>Save menu</PrimaryButton>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <SecondaryButton onClick={() => downloadMessCsv(state.messMenus)}>Download as CSV</SecondaryButton>
             <PrimaryButton onClick={startEdit}>Edit menu</PrimaryButton>
           </div>
@@ -137,7 +137,26 @@ function Mess() {
         </div>
       ) : (
         <Card>
-          <div className="overflow-x-auto">
+          {/* Small screens: one block per day, no sideways scrolling. */}
+          <div className="divide-y divide-slate-100 sm:hidden">
+            {days.map((day) => {
+              const m = state.messMenus.find((x) => x.day === day);
+              const isToday = day === today.getDay();
+              return (
+                <div key={day} className={`px-5 py-3 ${isToday ? "bg-blue-50/50" : ""}`}>
+                  <p className="text-sm font-medium text-slate-900">
+                    {DAY_NAMES[day]}
+                    {isToday ? " (today)" : ""}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">Breakfast: {m?.breakfast || "—"}</p>
+                  <p className="text-sm text-slate-600">Lunch: {m?.lunch || "—"}</p>
+                  <p className="text-sm text-slate-600">Dinner: {m?.dinner || "—"}</p>
+                </div>
+              );
+            })}
+          </div>
+          {/* Wider screens: the full table. */}
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200">
