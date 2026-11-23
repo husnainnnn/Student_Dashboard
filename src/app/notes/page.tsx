@@ -164,12 +164,12 @@ function Notes() {
             </Field>
             <div>
               <span className="mb-1 block text-sm font-medium text-slate-700">Upload a text file</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input
                   ref={fileRef}
                   type="file"
                   accept=".txt,.md,.pdf"
-                  className="text-sm text-slate-600"
+                  className="w-full min-w-0 text-sm text-slate-600 sm:w-auto"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) void handleFile(f);
@@ -247,7 +247,7 @@ function Notes() {
         ) : (
           <ul className="divide-y divide-slate-100">
             {state.notes.map((n) => (
-              <li key={n.id} className="flex items-start justify-between gap-4 px-5 py-3">
+              <li key={n.id} className="flex flex-wrap items-start justify-between gap-3 px-5 py-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-900">{n.title}</p>
                   <p className="truncate text-sm text-slate-500">{n.content.slice(0, 160)}…</p>
