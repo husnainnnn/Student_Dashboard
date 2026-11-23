@@ -65,7 +65,7 @@ export function TimetableEditor({
                 <TextInput type="time" value={l.start} onChange={(e) => update(l.id, { start: e.target.value })} />
               </Field>
             </div>
-            <div className="flex items-end gap-2">
+            <div className="col-span-2 flex items-end gap-2 sm:col-span-1">
               <div className="flex-1">
                 <Field label="End">
                   <TextInput type="time" value={l.end} onChange={(e) => update(l.id, { end: e.target.value })} />
