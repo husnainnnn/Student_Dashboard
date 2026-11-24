@@ -55,6 +55,8 @@ export interface Note {
   title: string;
   content: string;
   createdAt: string; // ISO timestamp
+  folder?: string; // e.g. "PDC" — empty means no folder
+  tags?: string[]; // e.g. ["MPI", "parallel"]
 }
 
 export interface AppState {
