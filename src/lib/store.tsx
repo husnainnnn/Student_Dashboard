@@ -57,7 +57,8 @@ interface DataContextValue {
   deleteLink: (id: string) => void;
   setLinks: (ls: SavedLink[]) => void;
   // notes
-  addNote: (title: string, content: string) => void;
+  addNote: (title: string, content: string, meta?: { folder?: string; tags?: string[] }) => void;
+  updateNote: (id: string, patch: Partial<Note>) => void;
   deleteNote: (id: string) => void;
   // settings + setup
   updateSettings: (patch: Partial<Settings>) => void;
@@ -86,7 +87,14 @@ function toLink(r: Row): SavedLink {
   return { id: String(r.id), label: String(r.label), url: String(r.url) };
 }
 function toNote(r: Row): Note {
-  return { id: String(r.id), title: String(r.title), content: String(r.content ?? ""), createdAt: String(r.created_at ?? new Date().toISOString()) };
+  return {
+    id: String(r.id),
+    title: String(r.title),
+    content: String(r.content ?? ""),
+    createdAt: String(r.created_at ?? new Date().toISOString()),
+    folder: (r.folder as string | undefined) ?? undefined,
+    tags: Array.isArray(r.tags) ? (r.tags as string[]) : undefined,
+  };
 }
 
 async function loadFromSupabase(userId: string): Promise<AppState | null> {
@@ -254,7 +262,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addLink: (label, url) => update((p) => ({ ...p, links: [...p.links, { id: uid(), label, url }] })),
     deleteLink: (id) => update((p) => ({ ...p, links: p.links.filter((x) => x.id !== id) })),
     setLinks: (links) => update((p) => ({ ...p, links })),
-    addNote: (title, content) => update((p) => ({ ...p, notes: [{ id: uid(), title, content, createdAt: new Date().toISOString() }, ...p.notes] })),
+    addNote: (title, content, meta) =>
+      update((p) => ({
+        ...p,
+        notes: [
+          {
+            id: uid(),
+            title,
+            content,
+            createdAt: new Date().toISOString(),
+            folder: meta?.folder?.trim() || undefined,
+            tags: meta?.tags?.length ? meta.tags : undefined,
+          },
+          ...p.notes,
+        ],
+      })),
+    updateNote: (id, patch) =>
+      update((p) => ({ ...p, notes: p.notes.map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
     deleteNote: (id) => update((p) => ({ ...p, notes: p.notes.filter((x) => x.id !== id) })),
     updateSettings: (patch) => update((p) => ({ ...p, settings: { ...p.settings, ...patch } })),
     setSettings: (settings) => update((p) => ({ ...p, settings })),
