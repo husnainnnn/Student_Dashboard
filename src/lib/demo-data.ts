@@ -87,6 +87,8 @@ export function buildDemoState(): AppState {
         title: DEMO_NOTE.title,
         content: DEMO_NOTE.content,
         createdAt: "2026-11-21T10:00:00.000Z",
+        folder: "PDC",
+        tags: ["MPI", "parallel"],
       },
     ],
   };
