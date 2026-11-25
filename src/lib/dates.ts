@@ -75,6 +75,24 @@ export function isWithinQuietHours(now: Date, start: string, end: string): boole
   return mins >= s || mins < e; // overnight, e.g. 22:00 -> 07:00
 }
 
+/**
+ * The next time quiet hours end, at or after `after`. Assumes `after` is
+ * inside quiet hours. Handles overnight windows (e.g. 22:00 -> 07:00 ends
+ * the following morning).
+ */
+export function nextQuietHoursEnd(after: Date, start: string, end: string): Date {
+  const s = timeToMinutes(start);
+  const e = timeToMinutes(end);
+  const [eh, em] = end.split(":").map(Number);
+  const d = new Date(after);
+  d.setHours(eh, em, 0, 0);
+  if (s > e && after.getHours() * 60 + after.getMinutes() >= s) {
+    // Evening side of an overnight window — quiet hours end tomorrow morning.
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
+}
+
 export function humanCountdown(ms: number): string {
   if (ms <= 0) return "now";
   const totalMin = Math.round(ms / 60000);
