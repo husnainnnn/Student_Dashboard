@@ -24,8 +24,11 @@ demo data only.
 - **Notes** — upload `.txt` / `.md` notes or paste text, then ask questions and
   get the most relevant passages back from your own notes (extractive search).
 - **Reminders** — a reminder center driven by your own settings: lecture
-  reminders N minutes before class, assignment reminders within your chosen
-  window, quiet hours, and browser notifications while the app is open.
+  reminders N minutes before class (changeable per lecture, or off per
+  lecture), assignment reminders a chosen number of hours before the due day
+  ends (changeable per assignment), quiet hours that hold reminders until
+  they end, and browser notifications scheduled at each reminder's exact
+  fire time while the app is open.
 - **Onboarding** — after signup/login, a step-by-step wizard collects your
   timetable, mess menu, important links, and reminder rules. Skippable: skipping
   fills in demo data you can replace from Settings. The timetable step also
@@ -93,6 +96,7 @@ src/
     timetable-import.ts CSV/JSON/text/PDF timetable parsing + CSV export
     pdf-extract.ts      In-browser PDF text extraction (pdfjs-dist)
     reminders.ts        Reminder computation from data + settings
+    notify.ts           Browser notification scheduling + fired/dismissed state
     supabase.ts         Supabase client + configured check
     auth.tsx            Auth provider (Supabase Auth or local demo profile)
     store.tsx           Per-user data store (localStorage + Supabase sync)
@@ -146,7 +150,8 @@ Assignments are manual today. To sync them automatically:
 ## Reminders v2
 
 The reminder center works while the app is open (in-app list + browser
-notifications). Reminders that must reach a student when the app is closed
+notifications scheduled at each reminder's exact fire time, with per-lecture
+and per-assignment rules and quiet-hours holding). Reminders that must reach a student when the app is closed
 (push notifications or email) need a small backend or a scheduled job that
 checks due lectures/assignments and sends them — for example a Vercel Cron Job
 or a Supabase Edge Function. That is a planned v2 step, not in this frontend.
