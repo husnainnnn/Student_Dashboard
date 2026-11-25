@@ -40,10 +40,28 @@ export interface SavedLink {
   url: string;
 }
 
+export interface LectureReminderOverride {
+  enabled: boolean;
+  minutesBefore: number;
+}
+
+export interface AssignmentReminderOverride {
+  enabled: boolean;
+  hoursBefore: number;
+}
+
 export interface Settings {
   lectureReminderMinutes: number;
   assignmentReminderHours: number;
+  // Per-lecture overrides, keyed by lecture id. Missing entry = use the
+  // global lectureReminderMinutes above. An entry with enabled: false
+  // silences reminders for that lecture entirely.
+  lectureReminders?: Record<string, LectureReminderOverride>;
+  // Per-assignment overrides, keyed by assignment id. Same rules as above;
+  // hoursBefore counts back from the end of the due day.
+  assignmentReminders?: Record<string, AssignmentReminderOverride>;
   mealsToTrack: { breakfast: boolean; lunch: boolean; dinner: boolean };
+  quietHoursEnabled: boolean;
   quietHoursStart: string; // "HH:MM"
   quietHoursEnd: string; // "HH:MM"
   onboardingDone: boolean;
@@ -72,7 +90,10 @@ export interface AppState {
 export const DEFAULT_SETTINGS: Settings = {
   lectureReminderMinutes: 30,
   assignmentReminderHours: 48,
+  lectureReminders: {},
+  assignmentReminders: {},
   mealsToTrack: { breakfast: true, lunch: true, dinner: true },
+  quietHoursEnabled: true,
   quietHoursStart: "22:00",
   quietHoursEnd: "07:00",
   onboardingDone: false,
