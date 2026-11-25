@@ -215,10 +215,20 @@ export function PreferencesForm({
       </div>
       <div>
         <span className="mb-1 block text-sm font-medium text-slate-700">Quiet hours</span>
+        <label className="mb-2 flex items-center gap-1.5 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-blue-600"
+            checked={settings.quietHoursEnabled}
+            onChange={(e) => onChange({ ...settings, quietHoursEnabled: e.target.checked })}
+          />
+          Hold notifications during quiet hours
+        </label>
         <div className="flex items-center gap-2 pt-1">
           <TextInput
             type="time"
             value={settings.quietHoursStart}
+            disabled={!settings.quietHoursEnabled}
             onChange={(e) => onChange({ ...settings, quietHoursStart: e.target.value })}
             aria-label="Quiet hours start"
           />
@@ -226,11 +236,14 @@ export function PreferencesForm({
           <TextInput
             type="time"
             value={settings.quietHoursEnd}
+            disabled={!settings.quietHoursEnabled}
             onChange={(e) => onChange({ ...settings, quietHoursEnd: e.target.value })}
             aria-label="Quiet hours end"
           />
         </div>
-        <p className="mt-1 text-xs text-slate-500">Reminders are held during quiet hours.</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Reminders that fall inside quiet hours are held and fire when quiet hours end.
+        </p>
       </div>
     </div>
   );
