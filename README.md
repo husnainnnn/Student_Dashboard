@@ -54,9 +54,9 @@ browser (localStorage). That is deliberate — any student can run it immediatel
 ## Connect Supabase (real accounts + sync)
 
 1. Create a free project at https://supabase.com (or use an existing one).
-2. In the Supabase SQL editor, run `supabase/schema.sql` from this repo. It
-   creates the tables (lectures, assignments, mess_menus, mess_status, links,
-   notes, user_settings) with row-level security so each user only sees their
+2. In the Supabase SQL editor, run `backend/supabase/migrations/001_initial_schema.sql` from this repo. It
+   creates the tables (profiles, lectures, assignments, mess_menus, mess_status, links,
+   notes, settings) with row-level security so each user only sees their
    own rows.
 3. In Supabase → Authentication → Providers, make sure Email is enabled.
 4. Copy `.env.example` to `.env.local` and fill in your project values:
@@ -67,6 +67,30 @@ browser (localStorage). That is deliberate — any student can run it immediatel
 With Supabase configured, signup/login use real Supabase Auth and data syncs
 to your project. Without the env vars, the app silently falls back to demo
 mode — it never breaks because a backend is missing.
+
+## Backend (FastAPI)
+
+`backend/` holds a small FastAPI service — see `backend/README.md` for the
+full guide. v1 does one thing: **server-side notes search (RAG-lite)**.
+`POST /api/notes/search` takes a question plus the notes to search and
+returns the most relevant passages with snippets, ranked the same way as
+the in-browser search (title, folder and tag hits count extra). There is
+no LLM and no embeddings key involved yet — the endpoint returns exactly
+the passages a future answer step would ground itself in.
+
+```bash
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000   # docs at http://localhost:8000/docs
+python3 test_search.py                  # ranking tests, no extra packages
+```
+
+The Supabase schema the API will read from lives in
+`backend/supabase/migrations/001_initial_schema.sql` (apply it in the
+Supabase SQL editor; it is safe to run twice). The search endpoint works
+without a database — notes travel in the request body for now, and reading
+them from Supabase by user id is a later step.
 
 ## Project structure
 
