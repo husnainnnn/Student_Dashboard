@@ -41,7 +41,7 @@ export default function Nav() {
 
   return (
     <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
         <Link
           href="/"
           className="shrink-0 text-base font-semibold tracking-tight text-slate-900"
@@ -58,7 +58,7 @@ export default function Nav() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium ${
                   active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
@@ -71,12 +71,12 @@ export default function Nav() {
             controls live in the mobile menu panel. */}
         <div className="hidden items-center gap-3 md:flex">
           {state.settings.demoData ? (
-            <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+            <span className="hidden rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 lg:inline-block">
               Demo data
             </span>
           ) : null}
           {mode === "demo" ? (
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+            <span className="hidden rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 lg:inline-block">
               Demo mode
             </span>
           ) : null}
