@@ -21,8 +21,10 @@ demo data only.
 - **Assignments** — due dates, due-soon highlight, pending / submitted / missing.
 - **Mess** — weekly menu, today's breakfast/lunch/dinner booking status, mess
   form link.
-- **Notes** — upload `.txt` / `.md` notes or paste text, then ask questions and
+- **Notes** — upload `.txt` / `.md` / `.pdf` notes or paste text, then ask questions and
   get the most relevant passages back from your own notes (extractive search).
+  PDF text is read in your browser, and notes can be organised into folders
+  with tags.
 - **Reminders** — a reminder center driven by your own settings: lecture
   reminders N minutes before class (changeable per lecture, or off per
   lecture), assignment reminders a chosen number of hours before the due day
@@ -112,20 +114,28 @@ src/
     ui.tsx              Shared buttons, inputs, cards, badges
     editors.tsx         Timetable / mess menu / links / preferences editors
     TimetableUpload.tsx Timetable file upload + preview + CSV export
+    MessMenuUpload.tsx  Mess menu file upload + preview + CSV export
+    AssignmentImport.tsx Assignment bulk import + preview
   lib/
     types.ts            Shared types + default settings
     demo-data.ts        DEMO seed data (BCS-7E timetable etc.) — replaceable
     dates.ts            Date/time helpers
     paths.ts            Deployed base path (GitHub Pages) for static files
     timetable-import.ts CSV/JSON/text/PDF timetable parsing + CSV export
+    mess-import.ts      CSV/JSON mess menu parsing + CSV export
+    assignments-import.ts CSV/JSON/text assignment parsing + CSV export
     pdf-extract.ts      In-browser PDF text extraction (pdfjs-dist)
     reminders.ts        Reminder computation from data + settings
     notify.ts           Browser notification scheduling + fired/dismissed state
     supabase.ts         Supabase client + configured check
     auth.tsx            Auth provider (Supabase Auth or local demo profile)
     store.tsx           Per-user data store (localStorage + Supabase sync)
-supabase/
-  schema.sql            Tables + RLS policies (run once, see above)
+backend/
+  main.py               FastAPI app (notes search API)
+  search.py             Passage ranking for notes search
+  schemas.py            Request/response models
+  test_search.py        Ranking tests (no extra packages)
+  supabase/migrations/001_initial_schema.sql  Tables + RLS policies
 ```
 
 ## What is real vs placeholder
@@ -134,15 +144,13 @@ supabase/
   search all work end to end in demo mode (localStorage) and in Supabase mode.
   Timetable import from CSV, JSON, text and PDF also works in the browser
   (pdfjs-dist; its worker file is vendored at `public/pdf.worker.min.mjs` —
-  copy it again from the package if pdfjs-dist is ever upgraded).
+  copy it again from the package if pdfjs-dist is ever upgraded). Notes PDF
+  text extraction also runs in the browser now — upload a `.pdf` note and its
+  text is read locally.
 - **Demo data:** the seed timetable is a real BCS-7E timetable and the seed
   assignments are real assignments, but they are only the demo seed. Any student
   replaces them during onboarding or from Settings. The weekly mess menu is a
   placeholder — edit it to match your hostel.
-- **Placeholder:** PDF text extraction for Notes. Text files and pasted text work
-  now; PDF parsing needs a server step and lands with the backend commit. Until
-  then the Notes page tells you to paste the PDF text. (Timetable PDFs are
-  different — those are read in the browser, see above.)
 - **Not built yet:** Google Classroom API sync (assignments are manual for now),
   generative answers for Notes (currently extractive passages only — see below),
   and push/email reminders when the app is closed.
@@ -191,6 +199,11 @@ npm run lint    # eslint
 
 ## Deploy
 
-The easiest free deploy is Vercel: import `husnainnnn/Student_Dashboard` and
-deploy. Add the two `NEXT_PUBLIC_SUPABASE_*` env vars in Vercel if you want
-real accounts; without them the deployed app still works in demo mode.
+The live site runs on GitHub Pages at
+https://husnainnnn.github.io/Student_Dashboard/ — every push to `main`
+rebuilds and deploys it automatically via `.github/workflows/deploy.yml`
+(Next.js static export, `GITHUB_PAGES=true npm run build`).
+
+Vercel also works: import `husnainnnn/Student_Dashboard` and deploy. Add the two
+`NEXT_PUBLIC_SUPABASE_*` env vars in Vercel if you want real accounts; without
+them the deployed app still works in demo mode.
